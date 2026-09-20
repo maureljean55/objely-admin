@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SupportStatus } from "@/lib/queries/support";
+import { logAdminAction } from "@/lib/audit";
 
 export async function replyToConversation(conversationId: string, body: string) {
   const session = await getSession();
@@ -29,6 +30,8 @@ export async function replyToConversation(conversationId: string, body: string) 
     .eq("id", conversationId)
     .neq("status", "closed");
 
+  await logAdminAction(session, "support.reply", "support_conversation", conversationId);
+
   revalidatePath(`/service-client/${conversationId}`);
   revalidatePath("/service-client");
 }
@@ -40,6 +43,8 @@ export async function setConversationStatus(conversationId: string, status: Supp
   const supabase = createAdminClient();
   const { error } = await supabase.from("support_conversations").update({ status }).eq("id", conversationId);
   if (error) throw new Error(error.message);
+
+  await logAdminAction(session, "support.status_change", "support_conversation", conversationId, { status });
 
   revalidatePath(`/service-client/${conversationId}`);
   revalidatePath("/service-client");

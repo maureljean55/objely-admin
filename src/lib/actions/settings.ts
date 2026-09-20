@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/audit";
 
 export type ChangePasswordResult = { error?: string; success?: boolean };
 
@@ -21,6 +22,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
   const newHash = await bcrypt.hash(newPassword, 12);
   const { error } = await supabase.from("admin_users").update({ password_hash: newHash }).eq("id", session.sub);
   if (error) return { error: error.message };
+
+  await logAdminAction(session, "admin.password_change", "admin_user", session.sub);
 
   return { success: true };
 }

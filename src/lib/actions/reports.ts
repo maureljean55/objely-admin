@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/audit";
 
 export async function setReportResolved(reportId: string, resolved: boolean) {
   const session = await getSession();
@@ -14,6 +15,8 @@ export async function setReportResolved(reportId: string, resolved: boolean) {
     .update({ resolved_at: resolved ? new Date().toISOString() : null, resolved_by: resolved ? session.fullName : null })
     .eq("id", reportId);
   if (error) throw new Error(error.message);
+
+  await logAdminAction(session, resolved ? "report.resolve" : "report.reopen", "problem_report", reportId);
 
   revalidatePath("/signalements");
 }

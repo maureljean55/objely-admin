@@ -10,9 +10,15 @@ import type { AdminSession } from "@/lib/auth";
 const NAV_ITEMS = [
   { href: "/", label: "Tableau de bord", icon: "dashboard" },
   { href: "/utilisateurs", label: "Utilisateurs", icon: "group", countKey: "users" as const },
+  { href: "/objets", label: "Objets", icon: "inventory_2" },
   { href: "/correspondances", label: "Correspondances", icon: "link", countKey: "activeMatches" as const, badgeStyle: "primary" as const },
   { href: "/service-client", label: "Service client", icon: "support_agent", countKey: "escalatedTickets" as const, badgeStyle: "secondary" as const },
   { href: "/signalements", label: "Signalements", icon: "flag", countKey: "openReports" as const, badgeStyle: "danger" as const },
+];
+
+const SECONDARY_NAV_ITEMS = [
+  { href: "/administrateurs", label: "Administrateurs", icon: "admin_panel_settings" },
+  { href: "/journal-activite", label: "Journal d'activité", icon: "history" },
 ];
 
 const BADGE_STYLES: Record<string, string> = {
@@ -61,6 +67,22 @@ export function Sidebar({ counts, session }: { counts: NavCounts; session: Admin
                     {formatCompactNumber(count)}
                   </span>
                 )}
+              </Link>
+            );
+          })}
+          <div className="my-2 border-t border-border-subtle" />
+          {SECONDARY_NAV_ITEMS.map((item) => {
+            const active = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm transition-colors ${
+                  active ? "bg-primary text-white font-medium shadow-sm" : "text-on-surface-variant hover:bg-surface-bg hover:text-on-surface"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}

@@ -102,23 +102,41 @@ export default async function UtilisateursPage({ searchParams }: { searchParams:
                     {user.suspended ? <Badge variant="danger">Suspendu</Badge> : <Badge variant="success">Actif</Badge>}
                   </td>
                   <td className="py-3.5 px-5 text-right">
-                    <form
-                      action={async () => {
-                        "use server";
-                        await setUserSuspended(user.id, !user.suspended);
-                      }}
-                    >
-                      <button
-                        type="submit"
-                        className={`px-3 py-1.5 rounded-lg text-label-sm font-medium transition-colors ${
-                          user.suspended
-                            ? "bg-success-container text-success-emerald hover:brightness-95"
-                            : "bg-danger-container text-danger-crimson hover:brightness-95"
-                        }`}
+                    {user.suspended ? (
+                      <form
+                        action={async () => {
+                          "use server";
+                          await setUserSuspended(user.id, false);
+                        }}
                       >
-                        {user.suspended ? "Réactiver" : "Suspendre"}
-                      </button>
-                    </form>
+                        <button
+                          type="submit"
+                          className="px-3 py-1.5 rounded-lg text-label-sm font-medium bg-success-container text-success-emerald hover:brightness-95 transition-colors"
+                        >
+                          Réactiver
+                        </button>
+                      </form>
+                    ) : (
+                      <form
+                        action={async (formData: FormData) => {
+                          "use server";
+                          await setUserSuspended(user.id, true, String(formData.get("reason") ?? ""));
+                        }}
+                        className="flex items-center justify-end gap-2"
+                      >
+                        <input
+                          name="reason"
+                          placeholder="Raison (optionnel)"
+                          className="w-36 px-2.5 py-1.5 rounded-lg bg-surface-bg border border-border-subtle text-body-sm text-on-surface focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          type="submit"
+                          className="shrink-0 px-3 py-1.5 rounded-lg text-label-sm font-medium bg-danger-container text-danger-crimson hover:brightness-95 transition-colors"
+                        >
+                          Suspendre
+                        </button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}

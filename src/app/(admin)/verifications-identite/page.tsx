@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listIdentityVerifications, type IdentityVerificationStatus } from "@/lib/queries/identityVerifications";
-import { approveIdentityVerification, rejectIdentityVerification } from "@/lib/actions/identityVerifications";
+import { approveIdentityVerification, rejectIdentityVerification, revokeIdentityVerification } from "@/lib/actions/identityVerifications";
 import { Badge } from "@/components/Badge";
 import { formatNumber, formatDateTime } from "@/lib/format";
 import { Pagination } from "@/components/Pagination";
@@ -92,6 +92,24 @@ export default async function VerificationsIdentitePage({
                   {verification.reviewedBy}
                   {verification.status === "rejected" && verification.rejectionReason && ` — ${verification.rejectionReason}`}
                 </p>
+              )}
+
+              {verification.status === "approved" && (
+                <div className="flex items-center gap-2 mt-1 pt-2 border-t border-border-subtle">
+                  <form
+                    action={async () => {
+                      "use server";
+                      await revokeIdentityVerification(verification.id);
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 rounded-lg text-label-sm font-medium bg-surface-bg text-on-surface-variant hover:bg-surface-bg/70 transition-colors"
+                    >
+                      Annuler l&apos;approbation
+                    </button>
+                  </form>
+                </div>
               )}
 
               {verification.status === "pending" && (

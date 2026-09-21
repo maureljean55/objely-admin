@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getNavCounts } from "@/lib/queries/counts";
+import { getAdminAvatarUrl } from "@/lib/queries/adminUsers";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 
@@ -11,13 +12,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // session data shouldn't trust that alone.
   if (!session) redirect("/login");
 
-  const counts = await getNavCounts();
+  const [counts, avatarUrl] = await Promise.all([getNavCounts(), getAdminAvatarUrl(session.sub)]);
 
   return (
     <div className="min-h-screen">
-      <Sidebar counts={counts} session={session} />
+      <Sidebar counts={counts} session={session} avatarUrl={avatarUrl} />
       <div className="pl-[250px]">
-        <Header session={session} />
+        <Header session={session} avatarUrl={avatarUrl} />
         <main className="w-full pt-16 px-6 py-6 min-h-screen">{children}</main>
       </div>
     </div>

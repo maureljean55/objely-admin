@@ -1,10 +1,14 @@
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { PasswordForm } from "@/components/PasswordForm";
+import { AvatarUploadForm } from "@/components/AvatarUploadForm";
+import { getAdminAvatarUrl } from "@/lib/queries/adminUsers";
 
 export default async function ParametresPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  const avatarUrl = await getAdminAvatarUrl(session.sub);
 
   return (
     <div className="flex flex-col gap-5 max-w-xl">
@@ -15,6 +19,11 @@ export default async function ParametresPage() {
 
       <div className="bg-surface-card rounded-xl shadow-card p-5 flex flex-col gap-4">
         <div>
+          <h2 className="text-title-md text-on-surface mb-3">Photo de profil</h2>
+          <AvatarUploadForm fullName={session.fullName} initialAvatarUrl={avatarUrl} />
+        </div>
+
+        <div className="pt-4 border-t border-border-subtle">
           <h2 className="text-title-md text-on-surface">Profil</h2>
           <div className="mt-3 flex flex-col gap-2 text-body-md">
             <div className="flex justify-between border-b border-border-subtle pb-2">

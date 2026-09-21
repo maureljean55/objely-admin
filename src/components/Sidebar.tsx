@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { formatCompactNumber } from "@/lib/format";
@@ -30,7 +31,7 @@ const BADGE_STYLES: Record<string, string> = {
   danger: "bg-danger-crimson text-white font-semibold",
 };
 
-export function Sidebar({ counts, session }: { counts: NavCounts; session: AdminSession }) {
+export function Sidebar({ counts, session, avatarUrl }: { counts: NavCounts; session: AdminSession; avatarUrl: string | null }) {
   const pathname = usePathname();
 
   async function handleLogout() {
@@ -93,13 +94,17 @@ export function Sidebar({ counts, session }: { counts: NavCounts; session: Admin
       <div className="p-2 border-t border-border-subtle bg-surface-card">
         <Link href="/parametres" className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-bg transition-colors group">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-semibold shrink-0">
-              {session.fullName
-                .split(" ")
-                .slice(0, 2)
-                .map((p) => p[0])
-                .join("")
-                .toUpperCase()}
+            <span className="relative w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-sm font-semibold shrink-0 overflow-hidden">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt="" fill sizes="32px" className="object-cover" />
+              ) : (
+                session.fullName
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("")
+                  .toUpperCase()
+              )}
             </span>
             <div className="flex flex-col min-w-0">
               <span className="text-label-md text-on-surface truncate">{session.fullName}</span>

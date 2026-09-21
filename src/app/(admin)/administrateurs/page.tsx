@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getSession } from "@/lib/session";
 import { listAdmins } from "@/lib/queries/adminUsers";
 import { removeAdmin } from "@/lib/actions/adminUsers";
@@ -20,8 +21,12 @@ export default async function AdministrateursPage() {
       <div className="bg-surface-card rounded-xl shadow-card overflow-hidden divide-y divide-border-subtle">
         {admins.map((admin) => (
           <div key={admin.id} className="flex items-center gap-4 p-4">
-            <span className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-semibold shrink-0">
-              {initials(admin.fullName)}
+            <span className="relative w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-semibold shrink-0 overflow-hidden">
+              {admin.avatarUrl ? (
+                <Image src={admin.avatarUrl} alt="" fill sizes="40px" className="object-cover" />
+              ) : (
+                initials(admin.fullName)
+              )}
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">

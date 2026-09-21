@@ -16,6 +16,15 @@ function truncatePath(path: string, max = 22) {
   return path.length > max ? `${path.slice(0, max - 1)}…` : path;
 }
 
+/** "+12% vs période précédente" — undefined when there's nothing to compare (both periods empty). */
+function periodTrend(current: number, previous: number): { label: string; positive: boolean } | undefined {
+  if (current === 0 && previous === 0) return undefined;
+  if (previous === 0) return { label: "Nouveau", positive: true };
+  const percent = Math.round(((current - previous) / previous) * 100);
+  if (percent === 0) return { label: "Stable vs période précédente", positive: true };
+  return { label: `${percent > 0 ? "+" : ""}${percent}% vs période précédente`, positive: percent > 0 };
+}
+
 export default async function StatistiquesPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const params = await searchParams;
   const days = RANGE_OPTIONS.some((o) => String(o.value) === params.days) ? Number(params.days) : 30;
@@ -26,6 +35,9 @@ export default async function StatistiquesPage({ searchParams }: { searchParams:
     (best, h) => (h.visits > (best?.visits ?? -1) ? h : best),
     null,
   );
+
+  const previousTopPageVisits = topPage ? summary.previous.topPages.find((p) => p.path === topPage.path)?.visits ?? 0 : 0;
+  const previousBusiestHourVisits = busiestHour ? summary.previous.hourly.find((h) => h.hour === busiestHour.hour)?.visits ?? 0 : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -50,19 +62,33 @@ export default async function StatistiquesPage({ searchParams }: { searchParams:
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Visites totales" value={formatNumber(summary.totalVisits)} icon="visibility" iconColorClass="text-primary" />
-        <StatCard label="Visiteurs connectés" value={formatNumber(summary.uniqueVisitors)} icon="group" iconColorClass="text-tertiary" />
+        <StatCard
+          label="Visites totales"
+          value={formatNumber(summary.totalVisits)}
+          icon="visibility"
+          iconColorClass="text-primary"
+          trend={periodTrend(summary.totalVisits, summary.previous.totalVisits)}
+        />
+        <StatCard
+          label="Visiteurs connectés"
+          value={formatNumber(summary.uniqueVisitors)}
+          icon="group"
+          iconColorClass="text-tertiary"
+          trend={periodTrend(summary.uniqueVisitors, summary.previous.uniqueVisitors)}
+        />
         <StatCard
           label="Page la plus visitée"
           value={topPage ? truncatePath(topPage.path) : "—"}
           icon="trending_up"
           iconColorClass="text-success-emerald"
+          trend={topPage ? periodTrend(topPage.visits, previousTopPageVisits) : undefined}
         />
         <StatCard
           label="Heure la plus active"
           value={busiestHour && busiestHour.visits > 0 ? `${String(busiestHour.hour).padStart(2, "0")}h` : "—"}
           icon="schedule"
           iconColorClass="text-warning-amber"
+          trend={busiestHour && busiestHour.visits > 0 ? periodTrend(busiestHour.visits, previousBusiestHourVisits) : undefined}
         />
       </div>
 

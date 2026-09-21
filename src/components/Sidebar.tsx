@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/correspondances", label: "Correspondances", icon: "link", countKey: "activeMatches" as const, badgeStyle: "primary" as const },
   { href: "/service-client", label: "Service client", icon: "support_agent", countKey: "escalatedTickets" as const, badgeStyle: "secondary" as const },
   { href: "/signalements", label: "Signalements", icon: "flag", countKey: "openReports" as const, badgeStyle: "danger" as const },
+  { href: "/verifications-identite", label: "Vérification d'identité", icon: "badge", countKey: "pendingIdentityVerifications" as const, badgeStyle: "primary" as const },
 ];
 
 const SECONDARY_NAV_ITEMS = [

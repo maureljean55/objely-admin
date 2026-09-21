@@ -16,6 +16,7 @@ export async function replyToConversation(conversationId: string, body: string) 
   const { error } = await supabase.from("support_messages").insert({
     conversation_id: conversationId,
     sender: "admin",
+    sender_name: session.fullName,
     kind: "text",
     body: trimmed,
   });

@@ -74,7 +74,7 @@ export async function getRecentActivity(limit = 8): Promise<RecentActivityRow[]>
   const supabase = createAdminClient();
   const { data: items } = await supabase
     .from("items")
-    .select("id, type, status, title, category_icon, location_public, location, user_id, created_at")
+    .select("id, type, status, title, category_icon, location_public, user_id, created_at")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -83,12 +83,17 @@ export async function getRecentActivity(limit = 8): Promise<RecentActivityRow[]>
   if (rows.length === 0) return [];
 
   const userIds = rows.map((r) => r.user_id);
-  const [{ data: profiles }, authUsers] = await Promise.all([
+  const itemIds = rows.map((r) => r.id);
+  const [{ data: profiles }, authUsers, { data: locations }] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", userIds),
     getAuthUsersByIds(userIds),
+    // Exact location lives in its own RLS-protected table — see
+    // 20260923010000_protect_item_location.sql.
+    supabase.from("item_locations").select("item_id, location").in("item_id", itemIds),
   ]);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const locationMap = new Map((locations ?? []).map((l) => [l.item_id, l.location]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -96,7 +101,7 @@ export async function getRecentActivity(limit = 8): Promise<RecentActivityRow[]>
     status: row.status,
     title: row.title,
     categoryIcon: row.category_icon,
-    location: row.location_public ?? row.location,
+    location: row.location_public ?? locationMap.get(row.id) ?? null,
     createdAt: row.created_at,
     userName: profileMap.get(row.user_id) || "Utilisateur",
     userEmail: authUsers.get(row.user_id)?.email ?? null,

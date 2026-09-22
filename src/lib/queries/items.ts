@@ -32,7 +32,7 @@ export async function listItems(page: number, filter: ItemFilter): Promise<Items
 
   let query = supabase
     .from("items")
-    .select("id, type, status, title, category_label, category_icon, location_public, location, photos, user_id, created_at, deleted_at", {
+    .select("id, type, status, title, category_label, category_icon, location_public, photos, user_id, created_at, deleted_at", {
       count: "exact",
     })
     .order("created_at", { ascending: false })
@@ -48,11 +48,16 @@ export async function listItems(page: number, filter: ItemFilter): Promise<Items
   if (rows.length === 0) return { rows: [], total: count ?? 0, page, pageSize: PAGE_SIZE };
 
   const userIds = rows.map((r) => r.user_id);
-  const [{ data: profiles }, authUsers] = await Promise.all([
+  const itemIds = rows.map((r) => r.id);
+  const [{ data: profiles }, authUsers, { data: locations }] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", userIds),
     getAuthUsersByIds(userIds),
+    // Exact location lives in its own RLS-protected table — see
+    // 20260923010000_protect_item_location.sql.
+    supabase.from("item_locations").select("item_id, location").in("item_id", itemIds),
   ]);
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const locationMap = new Map((locations ?? []).map((l) => [l.item_id, l.location]));
 
   const result: ItemRow[] = rows.map((item) => ({
     id: item.id,
@@ -61,7 +66,7 @@ export async function listItems(page: number, filter: ItemFilter): Promise<Items
     title: item.title,
     categoryLabel: item.category_label,
     categoryIcon: item.category_icon,
-    location: item.location_public ?? item.location,
+    location: item.location_public ?? locationMap.get(item.id) ?? null,
     photoCount: item.photos?.length ?? 0,
     ownerName: profileMap.get(item.user_id) || "Utilisateur",
     ownerEmail: authUsers.get(item.user_id)?.email ?? null,
@@ -86,10 +91,13 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
   const { data: item } = await supabase.from("items").select("*").eq("id", id).maybeSingle();
   if (!item) return null;
 
-  const [{ data: profile }, authUsers, { data: secret }] = await Promise.all([
+  const [{ data: profile }, authUsers, { data: secret }, { data: location }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", item.user_id).maybeSingle(),
     getAuthUsersByIds([item.user_id]),
     supabase.from("item_secrets").select("item_id").eq("item_id", id).maybeSingle(),
+    // Exact location lives in its own RLS-protected table — see
+    // 20260923010000_protect_item_location.sql.
+    supabase.from("item_locations").select("location").eq("item_id", id).maybeSingle(),
   ]);
 
   return {
@@ -99,7 +107,7 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
     title: item.title,
     categoryLabel: item.category_label,
     categoryIcon: item.category_icon,
-    location: item.location_public ?? item.location,
+    location: item.location_public ?? location?.location ?? null,
     photoCount: item.photos?.length ?? 0,
     ownerName: profile?.full_name || "Utilisateur",
     ownerEmail: authUsers.get(item.user_id)?.email ?? null,

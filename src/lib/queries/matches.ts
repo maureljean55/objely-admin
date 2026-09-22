@@ -41,8 +41,15 @@ export async function listMatches(page: number, status: MatchStatus | "all"): Pr
   if (rows.length === 0) return { rows: [], total: count ?? 0, page, pageSize: PAGE_SIZE };
 
   const itemIds = Array.from(new Set(rows.flatMap((m) => [m.lost_item_id, m.found_item_id])));
-  const { data: items } = await supabase.from("items").select("id, title, category_icon, location_public, location, user_id").in("id", itemIds);
+  const [{ data: items }, { data: locations }] = await Promise.all([
+    supabase.from("items").select("id, title, category_icon, location_public, user_id").in("id", itemIds),
+    // Exact location lives in its own RLS-protected table (see
+    // 20260923010000_protect_item_location.sql) — the service-role client
+    // here bypasses that RLS same as everywhere else in this admin portal.
+    supabase.from("item_locations").select("item_id, location").in("item_id", itemIds),
+  ]);
   const itemMap = new Map((items ?? []).map((i) => [i.id, i]));
+  const locationMap = new Map((locations ?? []).map((l) => [l.item_id, l.location]));
 
   const ownerIds = Array.from(new Set((items ?? []).map((i) => i.user_id)));
   const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", ownerIds);
@@ -54,7 +61,7 @@ export async function listMatches(page: number, status: MatchStatus | "all"): Pr
       id: itemId,
       title: item?.title ?? "Objet supprimé",
       categoryIcon: item?.category_icon ?? null,
-      location: item ? item.location_public ?? item.location : null,
+      location: item ? item.location_public ?? locationMap.get(itemId) ?? null : null,
       ownerName: item ? ownerMap.get(item.user_id) ?? "Utilisateur" : "—",
     };
   }

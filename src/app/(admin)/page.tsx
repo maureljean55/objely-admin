@@ -19,13 +19,9 @@ export default async function DashboardPage() {
   const [metrics, categories, activity] = await Promise.all([getDashboardMetrics(), getCategoryBreakdown(), getRecentActivity(8)]);
 
   const totalCategoryItems = categories.reduce((sum, c) => sum + c.count, 0) || 1;
-  let cumulativePercent = 0;
+  const cumulativePercents = categories.reduce<number[]>((acc, c, i) => [...acc, (acc[i - 1] ?? 0) + (c.count / totalCategoryItems) * 100], []);
   const gradientStops = categories
-    .map((c, i) => {
-      const start = cumulativePercent;
-      cumulativePercent += (c.count / totalCategoryItems) * 100;
-      return `${CATEGORY_COLORS[i % CATEGORY_COLORS.length]} ${start}% ${cumulativePercent}%`;
-    })
+    .map((c, i) => `${CATEGORY_COLORS[i % CATEGORY_COLORS.length]} ${cumulativePercents[i - 1] ?? 0}% ${cumulativePercents[i]}%`)
     .join(", ");
 
   const successRate = metrics.lostItems > 0 ? Math.round((metrics.recoveredItems / (metrics.lostItems + metrics.foundItems || 1)) * 1000) / 10 : 0;

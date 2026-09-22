@@ -15,6 +15,10 @@ const ACTION_ICON: Record<string, string> = {
   "admin.remove": "person_remove",
   "item.moderate_delete": "delete",
   "item.restore": "restore",
+  "identity_verification.approve": "verified",
+  "identity_verification.reject": "gpp_bad",
+  "identity_verification.revoke": "undo",
+  "admin.avatar_update": "photo_camera",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -30,6 +34,10 @@ const ACTION_LABEL: Record<string, string> = {
   "admin.remove": "Administrateur supprimé",
   "item.moderate_delete": "Annonce supprimée (modération)",
   "item.restore": "Annonce restaurée",
+  "identity_verification.approve": "Vérification d'identité approuvée",
+  "identity_verification.reject": "Vérification d'identité refusée",
+  "identity_verification.revoke": "Approbation d'identité annulée",
+  "admin.avatar_update": "Photo de profil modifiée",
 };
 
 export default async function JournalActivitePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {

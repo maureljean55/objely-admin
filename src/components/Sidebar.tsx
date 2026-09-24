@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Tableau de bord", icon: "dashboard" },
   { href: "/statistiques", label: "Statistiques", icon: "monitoring" },
   { href: "/utilisateurs", label: "Utilisateurs", icon: "group", countKey: "users" as const },
+  { href: "/organisation", label: "Organisation", icon: "school" },
   { href: "/objets", label: "Objets", icon: "inventory_2" },
   { href: "/correspondances", label: "Correspondances", icon: "link", countKey: "activeMatches" as const, badgeStyle: "primary" as const },
   { href: "/service-client", label: "Service client", icon: "support_agent", countKey: "escalatedTickets" as const, badgeStyle: "secondary" as const },

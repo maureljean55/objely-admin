@@ -19,6 +19,9 @@ const ACTION_ICON: Record<string, string> = {
   "identity_verification.reject": "gpp_bad",
   "identity_verification.revoke": "undo",
   "admin.avatar_update": "photo_camera",
+  "organization.create": "add_business",
+  "organization.update": "edit",
+  "organization.delete": "delete",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -38,6 +41,9 @@ const ACTION_LABEL: Record<string, string> = {
   "identity_verification.reject": "Vérification d'identité refusée",
   "identity_verification.revoke": "Approbation d'identité annulée",
   "admin.avatar_update": "Photo de profil modifiée",
+  "organization.create": "Établissement inscrit",
+  "organization.update": "Établissement modifié",
+  "organization.delete": "Établissement supprimé",
 };
 
 export default async function JournalActivitePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {

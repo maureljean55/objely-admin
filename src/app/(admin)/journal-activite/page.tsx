@@ -22,6 +22,7 @@ const ACTION_ICON: Record<string, string> = {
   "organization.create": "add_business",
   "organization.update": "edit",
   "organization.delete": "delete",
+  "organization.password_reset": "key",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -44,6 +45,7 @@ const ACTION_LABEL: Record<string, string> = {
   "organization.create": "Établissement inscrit",
   "organization.update": "Établissement modifié",
   "organization.delete": "Établissement supprimé",
+  "organization.password_reset": "Mot de passe d'établissement réinitialisé",
 };
 
 export default async function JournalActivitePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {

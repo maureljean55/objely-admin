@@ -134,6 +134,7 @@ export async function updateOrganization(id: string, input: OrganizationEdit): P
 
   await logAdminAction(session, "organization.update", "organization", id, { name: edit.value.name });
   revalidatePath("/organisation");
+  revalidatePath(`/organisation/${id}`);
   return { ok: true };
 }
 
@@ -196,4 +197,70 @@ export async function deleteOrganization(id: string, confirmName: string): Promi
   await logAdminAction(session, "organization.delete", "organization", id, { name: org.name, accountsLeft });
   revalidatePath("/organisation");
   return { ok: true, accountsLeft };
+}
+
+/** Cuts (or restores) all access for an establishment — its staff and its bornes — without deleting anything. */
+export async function setOrganizationSuspended(id: string, suspended: boolean): Promise<ActionResult> {
+  const session = await requireSuperAdmin();
+  const ecole = createEcoleClient();
+  if (!ecole) return { ok: false, error: NOT_CONFIGURED };
+
+  const { data, error } = await ecole
+    .from("organizations")
+    .update({ suspended_at: suspended ? new Date().toISOString() : null })
+    .eq("id", id)
+    .select("name")
+    .maybeSingle<{ name: string }>();
+  if (error?.code === "42703" || error?.code === "PGRST204") {
+    return { ok: false, error: "La suspension n'est pas encore disponible : la migration « organization_suspension » doit d'abord être appliquée sur la base des écoles." };
+  }
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Cet établissement n'existe plus." };
+
+  await logAdminAction(session, suspended ? "organization.suspend" : "organization.reactivate", "organization", id, { name: data.name });
+  revalidatePath("/organisation");
+  revalidatePath(`/organisation/${id}`);
+  return { ok: true };
+}
+
+/** Turns one staff account of the establishment off or back on. An inactive account can no longer sign in. */
+export async function setOrganizationMemberActive(organizationId: string, memberId: string, active: boolean): Promise<ActionResult> {
+  const session = await requireSuperAdmin();
+  const ecole = createEcoleClient();
+  if (!ecole) return { ok: false, error: NOT_CONFIGURED };
+
+  const { data, error } = await ecole
+    .from("members")
+    .update({ active })
+    .eq("id", memberId)
+    .eq("organization_id", organizationId)
+    .select("email")
+    .maybeSingle<{ email: string }>();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Ce compte n'existe plus." };
+
+  await logAdminAction(session, active ? "organization.member_enable" : "organization.member_disable", "organization", organizationId, { email: data.email });
+  revalidatePath(`/organisation/${organizationId}`);
+  return { ok: true };
+}
+
+/** Removes a borne: it goes back to its pairing screen and needs a new code from the establishment. */
+export async function revokeOrganizationKiosk(organizationId: string, kioskId: string): Promise<ActionResult> {
+  const session = await requireSuperAdmin();
+  const ecole = createEcoleClient();
+  if (!ecole) return { ok: false, error: NOT_CONFIGURED };
+
+  const { data, error } = await ecole
+    .from("kiosks")
+    .delete()
+    .eq("id", kioskId)
+    .eq("organization_id", organizationId)
+    .select("name")
+    .maybeSingle<{ name: string }>();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Cette borne n'existe plus." };
+
+  await logAdminAction(session, "organization.kiosk_revoke", "organization", organizationId, { kiosk: data.name });
+  revalidatePath(`/organisation/${organizationId}`);
+  return { ok: true };
 }

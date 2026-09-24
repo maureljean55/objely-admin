@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/Badge";
 import { CredentialsDialog } from "@/components/CredentialsDialog";
@@ -57,14 +58,17 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-4 p-4">
+        {/* The whole identity block opens the establishment's dashboard. */}
+        <Link href={`/organisation/${o.id}`} className="group flex min-w-0 flex-1 items-center gap-4">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
           <span className="material-symbols-outlined text-[20px]">school</span>
         </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-label-md font-semibold text-on-surface">{o.name}</span>
+            <span className="truncate text-label-md font-semibold text-on-surface group-hover:text-primary group-hover:underline">{o.name}</span>
             <Badge variant="tertiary">{ORGANIZATION_TYPES[o.type]}</Badge>
+            {o.suspendedAt && <Badge variant="danger">Suspendu</Badge>}
             {o.admin && !o.admin.lastSeenAt && <Badge variant="warning">Jamais connecté</Badge>}
           </div>
           <p className="truncate text-body-sm text-on-surface-variant">
@@ -80,6 +84,7 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
           <p className="text-label-sm text-on-surface-variant">Inscrit le</p>
           <p className="text-label-md text-on-surface">{formatDate(o.createdAt)}</p>
         </div>
+        </Link>
 
         <div className="flex shrink-0 items-center">
           <button type="button" onClick={() => { setError(null); setMode("edit"); }} title="Modifier" aria-label={`Modifier ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">

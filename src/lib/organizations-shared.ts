@@ -40,6 +40,8 @@ export type OrganizationSummary = {
   retentionDays: number;
   helpDesk: string | null;
   createdAt: string;
+  /** Set while the establishment is suspended. */
+  suspendedAt: string | null;
   admin: { name: string; email: string; lastSeenAt: string | null } | null;
 };
 

@@ -5,12 +5,15 @@ import { useState, useTransition } from "react";
 import { Badge } from "@/components/Badge";
 import { CredentialsDialog } from "@/components/CredentialsDialog";
 import { OrganizationForm } from "@/components/OrganizationForm";
-import { deleteOrganization, resetOrganizationPassword, updateOrganization } from "@/lib/actions/organizations";
+import { useRouter } from "next/navigation";
+import { deleteOrganization, resetOrganizationPassword, setOrganizationSuspended, updateOrganization } from "@/lib/actions/organizations";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ORGANIZATION_TYPES, type Credentials, type OrganizationSummary } from "@/lib/organizations-shared";
 
 export function OrganizationRow({ organization: o, isSuperAdmin }: { organization: OrganizationSummary; isSuperAdmin: boolean }) {
-  const [mode, setMode] = useState<"view" | "edit" | "reset" | "delete">("view");
+  const router = useRouter();
+  const [mode, setMode] = useState<"view" | "edit" | "reset" | "suspend" | "delete">("view");
+  const suspended = Boolean(o.suspendedAt);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [confirmName, setConfirmName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +29,16 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
       } else {
         setError(result.error);
       }
+    });
+  }
+
+  function toggleSuspension() {
+    setError(null);
+    startTransition(async () => {
+      const result = await setOrganizationSuspended(o.id, !suspended);
+      if (!result.ok) return setError(result.error);
+      setMode("view");
+      router.refresh();
     });
   }
 
@@ -106,9 +119,20 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
                 <span className="material-symbols-outlined text-[18px]">key</span>
               </button>
             )}
-            <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
-              <span className="material-symbols-outlined text-[18px]">delete</span>
+            <button
+              type="button"
+              onClick={() => { setError(null); setMode("suspend"); }}
+              title={suspended ? "Réactiver" : "Suspendre"}
+              aria-label={`${suspended ? "Réactiver" : "Suspendre"} ${o.name}`}
+              className={`rounded-lg p-2 transition-colors ${suspended ? "text-success-emerald hover:bg-success-container" : "text-warning-amber hover:bg-warning-container"}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{suspended ? "play_circle" : "block"}</span>
             </button>
+            {isSuperAdmin && (
+              <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+              </button>
+            )}
           </div>
         </td>
       </tr>
@@ -133,6 +157,37 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
             <span className="flex-1">Générer un nouveau mot de passe ? L&apos;ancien cessera de fonctionner immédiatement.</span>
             <button type="button" onClick={reset} disabled={isPending} className="rounded-lg bg-primary px-3 py-1.5 text-label-sm font-semibold text-white disabled:opacity-60">
               {isPending ? "Génération…" : "Générer"}
+            </button>
+            <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-1.5 text-label-sm text-on-surface-variant">Annuler</button>
+          </div>,
+        )}
+
+      {mode === "suspend" &&
+        panel(
+          <div
+            className={`flex flex-wrap items-center gap-3 rounded-lg px-4 py-3 text-body-sm ${
+              suspended ? "bg-success-container text-success-emerald" : "bg-warning-container text-warning-amber"
+            }`}
+          >
+            <span className="min-w-[240px] flex-1">
+              {suspended ? (
+                <>
+                  <strong>Réactiver {o.name} ?</strong> Son personnel pourra de nouveau se connecter et ses bornes recevoir des déclarations.
+                </>
+              ) : (
+                <>
+                  <strong>Suspendre {o.name} ?</strong> Son personnel ne pourra plus se connecter et ses bornes refuseront les déclarations. Rien n&apos;est
+                  supprimé : vous pourrez le réactiver à tout moment.
+                </>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={toggleSuspension}
+              disabled={isPending}
+              className={`rounded-lg px-3 py-1.5 text-label-sm font-semibold text-white disabled:opacity-60 ${suspended ? "bg-success-emerald" : "bg-warning-amber"}`}
+            >
+              {isPending ? "Enregistrement…" : suspended ? "Réactiver" : "Suspendre"}
             </button>
             <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-1.5 text-label-sm text-on-surface-variant">Annuler</button>
           </div>,

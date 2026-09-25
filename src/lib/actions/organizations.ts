@@ -23,7 +23,8 @@ async function requireSession() {
   return session;
 }
 
-// Resetting passwords, suspending and managing staff or bornes are reserved to super admins.
+// Resetting passwords, deleting an establishment and managing its staff or bornes are reserved to super admins.
+// Suspending / reactivating is open to every admin: it deletes nothing and can be undone.
 async function requireSuperAdmin() {
   const session = await requireSession();
   if (session.role !== "super_admin") throw new Error("Réservé aux super admins.");
@@ -171,9 +172,8 @@ export async function resetOrganizationPassword(id: string): Promise<ActionResul
 }
 
 /** Removes the establishment and everything attached to it (objects, declarations, restitutions…) plus its accounts. */
-// Open to every admin (not only super admins); typing the establishment's name stays the safeguard.
 export async function deleteOrganization(id: string, confirmName: string): Promise<ActionResult<{ accountsLeft: number }>> {
-  const session = await requireSession();
+  const session = await requireSuperAdmin();
   const ecole = createEcoleClient();
   if (!ecole) return { ok: false, error: NOT_CONFIGURED };
 
@@ -202,7 +202,7 @@ export async function deleteOrganization(id: string, confirmName: string): Promi
 
 /** Cuts (or restores) all access for an establishment — its staff and its bornes — without deleting anything. */
 export async function setOrganizationSuspended(id: string, suspended: boolean): Promise<ActionResult> {
-  const session = await requireSuperAdmin();
+  const session = await requireSession();
   const ecole = createEcoleClient();
   if (!ecole) return { ok: false, error: NOT_CONFIGURED };
 

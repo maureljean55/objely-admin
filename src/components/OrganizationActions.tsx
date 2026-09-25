@@ -61,24 +61,28 @@ export function OrganizationActions({
           <span className="material-symbols-outlined text-[18px]">edit</span>
           Modifier
         </button>
+        {canSuspend && (
+          <button
+            type="button"
+            onClick={() => open("suspend")}
+            className={`${BUTTON} ${suspended ? "text-success-emerald hover:bg-success-container" : "text-warning-amber hover:bg-warning-container"}`}
+          >
+            <span className="material-symbols-outlined text-[18px]">{suspended ? "play_circle" : "block"}</span>
+            {suspended ? "Réactiver" : "Suspendre"}
+          </button>
+        )}
         {isSuperAdmin && (
           <>
             <button type="button" onClick={() => open("reset")} className={BUTTON}>
               <span className="material-symbols-outlined text-[18px]">key</span>
               Nouveau mot de passe
             </button>
-            {canSuspend && (
-              <button type="button" onClick={() => open("suspend")} className={BUTTON}>
-                <span className="material-symbols-outlined text-[18px]">{suspended ? "play_circle" : "block"}</span>
-                {suspended ? "Réactiver" : "Suspendre"}
-              </button>
-            )}
+            <button type="button" onClick={() => open("delete")} className={`${BUTTON} text-danger-crimson hover:bg-danger-container`}>
+              <span className="material-symbols-outlined text-[18px]">delete</span>
+              Supprimer
+            </button>
           </>
         )}
-        <button type="button" onClick={() => open("delete")} className={`${BUTTON} text-danger-crimson hover:bg-danger-container`}>
-          <span className="material-symbols-outlined text-[18px]">delete</span>
-          Supprimer
-        </button>
       </div>
 
       {mode === "edit" && (

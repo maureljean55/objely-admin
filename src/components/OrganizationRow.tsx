@@ -38,104 +38,139 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
     });
   }
 
-  if (mode === "edit") {
-    return (
-      <div className="bg-surface-bg/60 p-5">
-        <OrganizationForm
-          mode="edit"
-          initial={{ name: o.name, type: o.type, city: o.city ?? "", address: o.address ?? "", phone: o.phone ?? "", contactEmail: o.contactEmail ?? "", retentionDays: o.retentionDays, helpDesk: o.helpDesk ?? "" }}
-          onCancel={() => setMode("view")}
-          onSubmit={async (input) => {
-            const result = await updateOrganization(o.id, input);
-            if (result.ok) setMode("view");
-            return result;
-          }}
-        />
-      </div>
-    );
-  }
+  const COLUMNS = 7;
+  const panel = (children: React.ReactNode) => (
+    <tr className="border-t border-border-subtle">
+      <td colSpan={COLUMNS} className="bg-surface-bg/60 px-5 py-4">
+        {children}
+      </td>
+    </tr>
+  );
 
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-4 p-4">
-        {/* The whole identity block opens the establishment's dashboard. */}
-        <Link href={`/organisation/${o.id}`} className="group flex min-w-0 flex-1 items-center gap-4">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
-          <span className="material-symbols-outlined text-[20px]">school</span>
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-label-md font-semibold text-on-surface group-hover:text-primary group-hover:underline">{o.name}</span>
-            <Badge variant="tertiary">{ORGANIZATION_TYPES[o.type]}</Badge>
-            {o.suspendedAt && <Badge variant="danger">Suspendu</Badge>}
-            {o.admin && !o.admin.lastSeenAt && <Badge variant="warning">Jamais connecté</Badge>}
-          </div>
-          <p className="truncate text-body-sm text-on-surface-variant">
-            {[o.city, o.phone, o.contactEmail].filter(Boolean).join(" · ") || "Aucune coordonnée renseignée"}
-          </p>
-          <p className="truncate text-body-sm text-on-surface-variant">
-            {o.admin ? `Accès : ${o.admin.name} · ${o.admin.email}` : "Aucun compte administrateur"}
-            {o.admin?.lastSeenAt && ` · connecté ${formatDateTime(o.admin.lastSeenAt)}`}
-          </p>
-        </div>
-
-        <div className="shrink-0 text-right">
-          <p className="text-label-sm text-on-surface-variant">Inscrit le</p>
-          <p className="text-label-md text-on-surface">{formatDate(o.createdAt)}</p>
-        </div>
-        </Link>
-
-        <div className="flex shrink-0 items-center">
-          <button type="button" onClick={() => { setError(null); setMode("edit"); }} title="Modifier" aria-label={`Modifier ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
-            <span className="material-symbols-outlined text-[18px]">edit</span>
-          </button>
-          {isSuperAdmin && (
+    <>
+      <tr className="border-t border-border-subtle align-top transition-colors hover:bg-surface-bg/50">
+        <td className="px-5 py-3.5">
+          {/* The establishment's name opens its dashboard. */}
+          <Link href={`/organisation/${o.id}`} className="group flex items-center gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+              <span className="material-symbols-outlined text-[18px]">school</span>
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-label-md font-semibold text-on-surface group-hover:text-primary group-hover:underline">{o.name}</span>
+              <span className="mt-1 flex flex-wrap gap-1.5">
+                <Badge variant="tertiary">{ORGANIZATION_TYPES[o.type]}</Badge>
+                {o.suspendedAt ? <Badge variant="danger">Suspendu</Badge> : <Badge variant="success">Actif</Badge>}
+              </span>
+            </span>
+          </Link>
+        </td>
+        <td className="px-3 py-3.5 text-body-sm text-on-surface">{o.city || <span className="text-muted">—</span>}</td>
+        <td className="px-3 py-3.5 text-body-sm">
+          {o.phone || o.contactEmail ? (
             <>
-              <button type="button" onClick={() => { setError(null); setMode("reset"); }} title="Nouveau mot de passe" aria-label={`Nouveau mot de passe pour ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
-                <span className="material-symbols-outlined text-[18px]">key</span>
-              </button>
-              <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-              </button>
+              {o.phone && <span className="block text-on-surface">{o.phone}</span>}
+              {o.contactEmail && <span className="block text-on-surface-variant">{o.contactEmail}</span>}
             </>
+          ) : (
+            <span className="text-muted">Non renseigné</span>
           )}
-        </div>
-      </div>
-
-      {mode === "reset" && (
-        <div className="mx-4 mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-warning-container px-4 py-3 text-body-sm text-warning-amber">
-          <span className="flex-1">Générer un nouveau mot de passe ? L&apos;ancien cessera de fonctionner immédiatement.</span>
-          <button type="button" onClick={reset} disabled={isPending} className="rounded-lg bg-primary px-3 py-1.5 text-label-sm font-semibold text-white disabled:opacity-60">
-            {isPending ? "Génération…" : "Générer"}
-          </button>
-          <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-1.5 text-label-sm text-on-surface-variant">Annuler</button>
-        </div>
-      )}
-
-      {mode === "delete" && (
-        <div className="mx-4 mb-4 flex flex-col gap-3 rounded-lg bg-danger-container px-4 py-3 text-body-sm text-danger-crimson">
-          <p>
-            <strong>Supprimer définitivement {o.name} ?</strong> Tous ses objets, déclarations, restitutions et comptes de connexion seront effacés. Cette action est irréversible.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              value={confirmName}
-              onChange={(e) => setConfirmName(e.target.value)}
-              placeholder={`Tapez « ${o.name} » pour confirmer`}
-              aria-label="Nom de l'établissement à confirmer"
-              className="min-w-[260px] flex-1 rounded-lg border border-danger-crimson/40 bg-white px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-danger-crimson/30"
-            />
-            <button type="button" onClick={remove} disabled={isPending || confirmName.trim().toLowerCase() !== o.name.trim().toLowerCase()} className="rounded-lg bg-danger-crimson px-3 py-2 text-label-sm font-semibold text-white disabled:opacity-40">
-              {isPending ? "Suppression…" : "Supprimer"}
+        </td>
+        <td className="px-3 py-3.5 text-body-sm">
+          {o.admin ? (
+            <>
+              <span className="block text-on-surface">{o.admin.name}</span>
+              <span className="block text-on-surface-variant">{o.admin.email}</span>
+              {o.admin.lastSeenAt ? (
+                <span className="block text-muted">Connecté {formatDateTime(o.admin.lastSeenAt)}</span>
+              ) : (
+                <span className="mt-1 inline-block"><Badge variant="warning">Jamais connecté</Badge></span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted">Aucun compte</span>
+          )}
+        </td>
+        <td className="px-3 py-3.5 text-body-sm tabular-nums text-on-surface">
+          {o.kioskCount}
+          {o.maxKiosks !== null && <span className="text-muted"> / {o.maxKiosks}</span>}
+        </td>
+        <td className="whitespace-nowrap px-3 py-3.5 text-body-sm text-on-surface">{formatDate(o.createdAt)}</td>
+        <td className="px-5 py-3.5">
+          <div className="flex justify-end">
+            <button type="button" onClick={() => { setError(null); setMode("edit"); }} title="Modifier" aria-label={`Modifier ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
+              <span className="material-symbols-outlined text-[18px]">edit</span>
             </button>
-            <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-2 text-label-sm text-on-surface-variant">Annuler</button>
+            {isSuperAdmin && (
+              <>
+                <button type="button" onClick={() => { setError(null); setMode("reset"); }} title="Nouveau mot de passe" aria-label={`Nouveau mot de passe pour ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
+                  <span className="material-symbols-outlined text-[18px]">key</span>
+                </button>
+                <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </>
+            )}
           </div>
-        </div>
-      )}
+        </td>
+      </tr>
 
-      {error && <p role="alert" className="mx-4 mb-3 text-body-sm font-medium text-danger-crimson">{error}</p>}
-      {credentials && <CredentialsDialog title="Nouveau mot de passe" credentials={credentials} onClose={() => setCredentials(null)} />}
-    </div>
+      {mode === "edit" &&
+        panel(
+          <OrganizationForm
+            mode="edit"
+            initial={{ name: o.name, type: o.type, city: o.city ?? "", address: o.address ?? "", phone: o.phone ?? "", contactEmail: o.contactEmail ?? "", retentionDays: o.retentionDays, helpDesk: o.helpDesk ?? "" }}
+            onCancel={() => setMode("view")}
+            onSubmit={async (input) => {
+              const result = await updateOrganization(o.id, input);
+              if (result.ok) setMode("view");
+              return result;
+            }}
+          />,
+        )}
+
+      {mode === "reset" &&
+        panel(
+          <div className="flex flex-wrap items-center gap-3 rounded-lg bg-warning-container px-4 py-3 text-body-sm text-warning-amber">
+            <span className="flex-1">Générer un nouveau mot de passe ? L&apos;ancien cessera de fonctionner immédiatement.</span>
+            <button type="button" onClick={reset} disabled={isPending} className="rounded-lg bg-primary px-3 py-1.5 text-label-sm font-semibold text-white disabled:opacity-60">
+              {isPending ? "Génération…" : "Générer"}
+            </button>
+            <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-1.5 text-label-sm text-on-surface-variant">Annuler</button>
+          </div>,
+        )}
+
+      {mode === "delete" &&
+        panel(
+          <div className="flex flex-col gap-3 rounded-lg bg-danger-container px-4 py-3 text-body-sm text-danger-crimson">
+            <p>
+              <strong>Supprimer définitivement {o.name} ?</strong> Tous ses objets, déclarations, restitutions et comptes de connexion seront effacés. Cette action est irréversible.
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                placeholder={`Tapez « ${o.name} » pour confirmer`}
+                aria-label="Nom de l'établissement à confirmer"
+                className="min-w-[260px] flex-1 rounded-lg border border-danger-crimson/40 bg-white px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-danger-crimson/30"
+              />
+              <button type="button" onClick={remove} disabled={isPending || confirmName.trim().toLowerCase() !== o.name.trim().toLowerCase()} className="rounded-lg bg-danger-crimson px-3 py-2 text-label-sm font-semibold text-white disabled:opacity-40">
+                {isPending ? "Suppression…" : "Supprimer"}
+              </button>
+              <button type="button" onClick={() => setMode("view")} disabled={isPending} className="px-3 py-2 text-label-sm text-on-surface-variant">Annuler</button>
+            </div>
+          </div>,
+        )}
+
+      {error &&
+        panel(<p role="alert" className="text-body-sm font-medium text-danger-crimson">{error}</p>)}
+      {credentials && (
+        <tr>
+          <td colSpan={COLUMNS} className="p-0">
+            <CredentialsDialog title="Nouveau mot de passe" credentials={credentials} onClose={() => setCredentials(null)} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

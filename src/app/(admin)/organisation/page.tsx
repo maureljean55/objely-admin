@@ -10,7 +10,7 @@ export default async function OrganisationPage() {
   const { organizations, error } = configured ? await listOrganizations() : { organizations: [], error: null };
 
   return (
-    <div className="flex max-w-4xl flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       <div>
         <h1 className="text-headline-md text-on-surface">Organisation</h1>
         <p className="text-body-sm text-on-surface-variant">
@@ -47,10 +47,25 @@ export default async function OrganisationPage() {
             </div>
           ) : (
             organizations.length > 0 && (
-              <div className="divide-y divide-border-subtle overflow-hidden rounded-xl bg-surface-card shadow-card">
-                {organizations.map((organization) => (
-                  <OrganizationRow key={organization.id} organization={organization} isSuperAdmin={session?.role === "super_admin"} />
-                ))}
+              <div className="overflow-x-auto rounded-xl bg-surface-card shadow-card">
+                <table className="w-full min-w-[960px] text-left">
+                  <thead className="bg-surface-bg text-label-sm uppercase tracking-wider text-on-surface-variant">
+                    <tr>
+                      <th className="px-5 py-3">Établissement</th>
+                      <th className="px-3 py-3">Ville</th>
+                      <th className="px-3 py-3">Contact</th>
+                      <th className="px-3 py-3">Compte administrateur</th>
+                      <th className="px-3 py-3">Bornes</th>
+                      <th className="px-3 py-3">Inscrit le</th>
+                      <th className="px-5 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {organizations.map((organization) => (
+                      <OrganizationRow key={organization.id} organization={organization} isSuperAdmin={session?.role === "super_admin"} />
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )
           )}

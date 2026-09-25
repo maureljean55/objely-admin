@@ -14,6 +14,8 @@ type Row = {
   help_desk: string | null;
   created_at: string;
   suspended_at?: string | null;
+  max_kiosks?: number | null;
+  kiosks: { count: number }[];
   members: { email: string; full_name: string; role: string; active: boolean; last_seen_at: string | null; created_at: string }[];
 };
 
@@ -21,10 +23,11 @@ export async function listOrganizations(): Promise<{ organizations: Organization
   const ecole = createEcoleClient();
   if (!ecole) return { organizations: [], error: null };
 
-  const columns = "id, name, type, city, address, phone, contact_email, retention_days, help_desk, created_at, members(email, full_name, role, active, last_seen_at, created_at)";
+  const columns =
+    "id, name, type, city, address, phone, contact_email, retention_days, help_desk, created_at, kiosks(count), members(email, full_name, role, active, last_seen_at, created_at)";
   const list = (select: string) => ecole.from("organizations").select(select).order("created_at", { ascending: false }).limit(500).returns<Row[]>();
-  let { data, error } = await list(`${columns}, suspended_at`);
-  // 42703: the suspension migration has not been applied yet on the school database.
+  let { data, error } = await list(`${columns}, suspended_at, max_kiosks`);
+  // 42703: a recent migration has not been applied yet on the school database.
   if (error?.code === "42703") ({ data, error } = await list(columns));
 
   if (error) return { organizations: [], error: error.message };
@@ -47,6 +50,8 @@ export async function listOrganizations(): Promise<{ organizations: Organization
         helpDesk: o.help_desk,
         createdAt: o.created_at,
         suspendedAt: o.suspended_at ?? null,
+        kioskCount: o.kiosks?.[0]?.count ?? 0,
+        maxKiosks: o.max_kiosks ?? null,
         admin: admin ? { name: admin.full_name, email: admin.email, lastSeenAt: admin.last_seen_at } : null,
       };
     }),

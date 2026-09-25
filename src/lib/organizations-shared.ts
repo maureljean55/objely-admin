@@ -42,6 +42,9 @@ export type OrganizationSummary = {
   createdAt: string;
   /** Set while the establishment is suspended. */
   suspendedAt: string | null;
+  kioskCount: number;
+  /** Most bornes it may have; null = no limit. */
+  maxKiosks: number | null;
   admin: { name: string; email: string; lastSeenAt: string | null } | null;
 };
 

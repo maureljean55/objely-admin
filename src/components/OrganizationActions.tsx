@@ -73,12 +73,12 @@ export function OrganizationActions({
                 {suspended ? "Réactiver" : "Suspendre"}
               </button>
             )}
-            <button type="button" onClick={() => open("delete")} className={`${BUTTON} text-danger-crimson hover:bg-danger-container`}>
-              <span className="material-symbols-outlined text-[18px]">delete</span>
-              Supprimer
-            </button>
           </>
         )}
+        <button type="button" onClick={() => open("delete")} className={`${BUTTON} text-danger-crimson hover:bg-danger-container`}>
+          <span className="material-symbols-outlined text-[18px]">delete</span>
+          Supprimer
+        </button>
       </div>
 
       {mode === "edit" && (

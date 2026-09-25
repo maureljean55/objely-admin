@@ -23,7 +23,7 @@ async function requireSession() {
   return session;
 }
 
-// Handing out and resetting passwords, and deleting an establishment with all its data, are reserved to super admins.
+// Resetting passwords, suspending and managing staff or bornes are reserved to super admins.
 async function requireSuperAdmin() {
   const session = await requireSession();
   if (session.role !== "super_admin") throw new Error("Réservé aux super admins.");
@@ -171,8 +171,9 @@ export async function resetOrganizationPassword(id: string): Promise<ActionResul
 }
 
 /** Removes the establishment and everything attached to it (objects, declarations, restitutions…) plus its accounts. */
+// Open to every admin (not only super admins); typing the establishment's name stays the safeguard.
 export async function deleteOrganization(id: string, confirmName: string): Promise<ActionResult<{ accountsLeft: number }>> {
-  const session = await requireSuperAdmin();
+  const session = await requireSession();
   const ecole = createEcoleClient();
   if (!ecole) return { ok: false, error: NOT_CONFIGURED };
 

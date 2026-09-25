@@ -102,15 +102,13 @@ export function OrganizationRow({ organization: o, isSuperAdmin }: { organizatio
               <span className="material-symbols-outlined text-[18px]">edit</span>
             </button>
             {isSuperAdmin && (
-              <>
-                <button type="button" onClick={() => { setError(null); setMode("reset"); }} title="Nouveau mot de passe" aria-label={`Nouveau mot de passe pour ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
-                  <span className="material-symbols-outlined text-[18px]">key</span>
-                </button>
-                <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </>
+              <button type="button" onClick={() => { setError(null); setMode("reset"); }} title="Nouveau mot de passe" aria-label={`Nouveau mot de passe pour ${o.name}`} className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-bg">
+                <span className="material-symbols-outlined text-[18px]">key</span>
+              </button>
             )}
+            <button type="button" onClick={() => { setError(null); setConfirmName(""); setMode("delete"); }} title="Supprimer" aria-label={`Supprimer ${o.name}`} className="rounded-lg p-2 text-danger-crimson transition-colors hover:bg-danger-container">
+              <span className="material-symbols-outlined text-[18px]">delete</span>
+            </button>
           </div>
         </td>
       </tr>

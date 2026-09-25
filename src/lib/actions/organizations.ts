@@ -264,3 +264,24 @@ export async function revokeOrganizationKiosk(organizationId: string, kioskId: s
   revalidatePath(`/organisation/${organizationId}`);
   return { ok: true };
 }
+
+/** How many bornes the establishment may have (null = no limit). Existing bornes are kept if it is lowered. */
+export async function setOrganizationKioskLimit(id: string, limit: number | null): Promise<ActionResult> {
+  const session = await requireSession();
+  const ecole = createEcoleClient();
+  if (!ecole) return { ok: false, error: NOT_CONFIGURED };
+  if (limit !== null && (!Number.isInteger(limit) || limit < 0 || limit > 1000)) {
+    return { ok: false, error: "Indiquez un nombre entier de bornes entre 0 et 1000, ou laissez vide pour ne pas limiter." };
+  }
+
+  const { data, error } = await ecole.from("organizations").update({ max_kiosks: limit }).eq("id", id).select("name").maybeSingle<{ name: string }>();
+  if (error?.code === "42703" || error?.code === "PGRST204") {
+    return { ok: false, error: "La limite de bornes n'est pas encore disponible : la migration « kiosk_limit » doit d'abord être appliquée sur la base des écoles." };
+  }
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Cet établissement n'existe plus." };
+
+  await logAdminAction(session, "organization.kiosk_limit", "organization", id, { name: data.name, maxKiosks: limit });
+  revalidatePath(`/organisation/${id}`);
+  return { ok: true };
+}

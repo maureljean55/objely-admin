@@ -8,6 +8,7 @@ import {
   deleteOrganization,
   resetOrganizationPassword,
   revokeOrganizationKiosk,
+  setOrganizationKioskLimit,
   setOrganizationMemberActive,
   setOrganizationSuspended,
   updateOrganization,
@@ -245,5 +246,74 @@ export function KioskRevoke({ organizationId, kioskId, name }: { organizationId:
         <span className="material-symbols-outlined text-[18px]">link_off</span>
       </button>
     </span>
+  );
+}
+
+/** How many bornes the establishment may add. Empty = no limit. */
+export function KioskLimitForm({ organizationId, limit, count }: { organizationId: string; limit: number | null; count: number }) {
+  const router = useRouter();
+  const [value, setValue] = useState(limit === null ? "" : String(limit));
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const next = value.trim() === "" ? null : Number(value);
+  const changed = next !== limit;
+
+  return (
+    <form
+      className="flex flex-col gap-2 border-t border-border-subtle px-5 py-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setMessage(null);
+        startTransition(async () => {
+          const result = await setOrganizationKioskLimit(organizationId, next);
+          if (!result.ok) return setMessage({ ok: false, text: result.error });
+          setMessage({
+            ok: true,
+            text:
+              next === null
+                ? "Enregistré : aucune limite."
+                : next <= count
+                  ? `Enregistré. L'établissement a déjà ${count} borne${count > 1 ? "s" : ""} : il ne pourra plus en ajouter (les existantes sont gardées).`
+                  : `Enregistré : il peut encore ajouter ${next - count} borne${next - count > 1 ? "s" : ""}.`,
+          });
+          router.refresh();
+        });
+      }}
+    >
+      <label htmlFor="max-kiosks" className="text-label-md font-semibold text-on-surface">Nombre maximum de bornes</label>
+      <div className="flex items-center gap-2">
+        <input
+          id="max-kiosks"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={1000}
+          step={1}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setMessage(null);
+          }}
+          placeholder="Illimité"
+          className="w-32 rounded-lg border border-border-subtle bg-white px-3 py-2 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+        <button type="submit" disabled={isPending || !changed} className="rounded-lg bg-primary px-3 py-2 text-label-sm font-semibold text-white disabled:opacity-50">
+          {isPending ? "Enregistrement…" : "Enregistrer"}
+        </button>
+        {value !== "" && (
+          <button type="button" disabled={isPending} onClick={() => setValue("")} className="px-2 py-2 text-label-sm text-on-surface-variant hover:text-on-surface">
+            Sans limite
+          </button>
+        )}
+      </div>
+      <p className="text-body-sm text-on-surface-variant">
+        Une fois ce nombre atteint, l&apos;établissement ne peut plus ajouter de borne depuis son espace. Laissez vide pour ne pas limiter.
+      </p>
+      {message && (
+        <p role={message.ok ? "status" : "alert"} className={`text-body-sm font-medium ${message.ok ? "text-success-emerald" : "text-danger-crimson"}`}>
+          {message.text}
+        </p>
+      )}
+    </form>
   );
 }

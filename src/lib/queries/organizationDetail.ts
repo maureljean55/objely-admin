@@ -24,6 +24,7 @@ export const MEMBER_ROLES: Record<string, string> = { admin: "Administrateur", v
 type OrgRow = {
   id: string; name: string; type: OrganizationType; city: string | null; address: string | null; phone: string | null; contact_email: string | null;
   retention_days: number; idle_seconds: number; help_desk: string | null; created_at: string; suspended_at?: string | null;
+  max_kiosks?: number | null;
 };
 type ObjectRow = { id: string; name: string; category: Category; description: string; found_at: string | null; deposited_at: string; status: "en_stock" | "restitue" | "a_donner" };
 type DeclarationRow = {
@@ -43,6 +44,8 @@ export type OrganizationDetail = {
     retentionDays: number; idleSeconds: number; helpDesk: string | null; createdAt: string;
     /** undefined when the database does not have the suspension column yet. */
     suspendedAt: string | null | undefined;
+    /** Most bornes it may have: null = no limit, undefined = the database does not have the column yet. */
+    maxKiosks: number | null | undefined;
   };
   totals: {
     declarations: number; lost: number; found: number; openDeclarations: number; staleDeclarations: number;
@@ -82,9 +85,11 @@ function matchScore(d: DeclarationRow, o: ObjectRow) {
 
 async function fetchOrganization(ecole: NonNullable<ReturnType<typeof createEcoleClient>>, id: string) {
   const columns = "id, name, type, city, address, phone, contact_email, retention_days, idle_seconds, help_desk, created_at";
-  const withSuspension = await ecole.from("organizations").select(`${columns}, suspended_at`).eq("id", id).maybeSingle<OrgRow>();
-  // 42703: the suspension migration has not been applied yet. Everything else still works without it.
-  if (withSuspension.error?.code !== "42703") return withSuspension;
+  // Newest columns first; 42703 means a migration is not applied yet on the school database, so fall back without it.
+  for (const extra of [", suspended_at, max_kiosks", ", suspended_at", ""]) {
+    const result = await ecole.from("organizations").select(columns + extra).eq("id", id).maybeSingle<OrgRow>();
+    if (result.error?.code !== "42703") return result;
+  }
   return ecole.from("organizations").select(columns).eq("id", id).maybeSingle<OrgRow>();
 }
 
@@ -160,6 +165,7 @@ export async function getOrganizationDetail(id: string): Promise<OrganizationDet
       id: org.id, name: org.name, type: org.type, city: org.city, address: org.address, phone: org.phone, contactEmail: org.contact_email,
       retentionDays: org.retention_days, idleSeconds: org.idle_seconds, helpDesk: org.help_desk, createdAt: org.created_at,
       suspendedAt: "suspended_at" in org ? (org.suspended_at ?? null) : undefined,
+      maxKiosks: "max_kiosks" in org ? (org.max_kiosks ?? null) : undefined,
     },
     totals: {
       declarations: decls.length,

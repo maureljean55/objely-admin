@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Dot } from "@/components/Badge";
-import { KioskRevoke, MemberToggle, OrganizationActions } from "@/components/OrganizationActions";
+import { KioskLimitForm, KioskRevoke, MemberToggle, OrganizationActions } from "@/components/OrganizationActions";
 import { StatCard } from "@/components/StatCard";
 import { formatDate, formatDateTime, formatNumber, formatRelativeTime } from "@/lib/format";
 import { ORGANIZATION_TYPES } from "@/lib/organizations-shared";
@@ -252,7 +252,12 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Panel title="Bornes" subtitle={`${t.kiosksOnline} en ligne sur ${t.kiosks}`}>
+        <Panel
+          title="Bornes"
+          subtitle={`${t.kiosksOnline} en ligne sur ${t.kiosks}${
+            typeof o.maxKiosks === "number" ? ` · limite ${o.maxKiosks} borne${o.maxKiosks > 1 ? "s" : ""}${t.kiosks >= o.maxKiosks ? " (atteinte)" : ""}` : ""
+          }`}
+        >
           {detail.kiosks.length === 0 ? (
             <p className="px-5 pb-5 text-body-sm text-on-surface-variant">Aucune borne créée.</p>
           ) : (
@@ -273,6 +278,7 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
               ))}
             </ul>
           )}
+          {o.maxKiosks !== undefined && <KioskLimitForm organizationId={o.id} limit={o.maxKiosks} count={t.kiosks} />}
         </Panel>
 
         <Panel title="Personnel" subtitle={`${t.activeMembers} compte${t.activeMembers > 1 ? "s" : ""} actif${t.activeMembers > 1 ? "s" : ""} sur ${t.members}`}>
